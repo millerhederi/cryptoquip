@@ -3,6 +3,7 @@ package main
 import "fmt"
 
 type Code struct {
+	keyStack [][2]byte
 	decryptionMap [26]byte
 	encryptionMap [26]byte
 }
@@ -12,34 +13,49 @@ func NewCode() *Code {
 }
 
 // Return the newly added mappings, and if successful or not
-func (this *Code) TryUpdateWithDecryptedWord(cyphertext, plaintext []byte) ([][2]byte, bool) {
-	keysToAdd := make([][2]byte, 0, len(cyphertext))
+func (this *Code) TryUpdateWithDecryptedWord(cyphertext, plaintext []byte) (int, bool) {
+	keysAdded := 0
 
 	for i := 0; i < len(cyphertext); i++ {
 		if decrypted, ok := this.decryptByte(cyphertext[i]); ok {
 			if decrypted != plaintext[i] {
-				return [][2]byte{ }, false
+				this.RemoveLastNKeys(keysAdded)
+				return 0, false
 			}
 			continue // key already exists in mapping, skip
 		} else if encrypted, ok := this.encryptByte(plaintext[i]); ok {
 			if encrypted != cyphertext[i] {
-				return [][2]byte{ }, false
+				this.RemoveLastNKeys(keysAdded)
+				return 0, false
 			}
 		}
 
-		keysToAdd = append(keysToAdd, [2]byte{ cyphertext[i], plaintext[i] })
+		this.addKey([2]byte{ cyphertext[i], plaintext[i] })
+		keysAdded++
 	}
 
-	for _, key := range keysToAdd {
-		this.addKey(key)
-	}
-
-	return keysToAdd, true
+	return keysAdded, true
 }
 
 func (this *Code) addKey(key [2]byte) {
 	this.decryptionMap[byteToMapIndex(key[0])] = key[1]
 	this.encryptionMap[byteToMapIndex(key[1])] = key[0]
+
+	this.keyStack = append(this.keyStack, key)
+}
+
+func (this *Code) removeLastKey() {
+	keyToRemove := this.keyStack[len(this.keyStack) - 1]
+
+	this.removeKey(keyToRemove)
+
+	this.keyStack = this.keyStack[:len(this.keyStack) - 1]
+}
+
+func (this *Code) RemoveLastNKeys(n int) {
+	for i := 0; i < n; i++ {
+		this.removeLastKey()
+	}
 }
 
 func (this *Code) removeKey(key [2]byte) {

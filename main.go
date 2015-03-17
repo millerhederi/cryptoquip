@@ -14,7 +14,7 @@ type CandidateMap struct {
 
 func main() {
 	defer profile.Start(profile.CPUProfile).Stop()
-	
+
 	dict, err := NewDictionaryFromFile("en-US.dic")
 	if err != nil {
 		fmt.Println(err)
@@ -52,7 +52,7 @@ func recursiveSolve(candidates []CandidateMap, code *Code) {
 		if keys, ok := code.TryUpdateWithDecryptedWord((*candidates[0].cyphertext).CompressedText, (*candidate).CompressedText); ok {
 			recursiveSolve(candidates[1:], code)
 
-			code.RemoveKeys(keys)
+			code.RemoveLastNKeys(keys)
 		}
 	}
 }
