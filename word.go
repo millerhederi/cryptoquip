@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"strconv"
+)
+
 type Word struct {
 	Text string
 	Signature []byte
@@ -16,6 +21,10 @@ func NewWord(text string) *Word {
 	byteValueMap := make(map[byte]byte)
 
 	for i := 0; i < len(text); i++ {
+		if text[i] < 'A' || text[i] > 'Z' {
+			panic(fmt.Sprintf("%s, %v, %v", text, []byte(text), strconv.QuoteToASCII(text)))
+		}
+
 		value, ok := byteValueMap[text[i]]
 
 		if !ok {

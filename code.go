@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type Code struct {
 	keyStack [][2]byte
 	decryptionMap [26]byte
@@ -79,12 +77,22 @@ func (this *Code) encryptByte(b byte) (byte, bool) {
 	return encrypted, encrypted != 0
 }
 
+func (this *Code) Decrypt(ciphertext []byte) []byte {
+	results := make([]byte, len(ciphertext))
+
+	for i, c := range ciphertext {
+		if index := byteToMapIndex(c); index >= 0 && index < 26 {
+			results[i], _ = this.decryptByte(c)
+		} else {
+			results[i] = c
+		}
+	}
+
+	return results
+}
+
 func byteToMapIndex(b byte) byte {
 	result := b - 'A'
-
-	if result < 0 || result >= 26 {
-		panic(fmt.Sprintf("byteToMapIndex(%c)=%d", b, result))
-	}
 
 	return result
 }

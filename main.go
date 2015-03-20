@@ -1,16 +1,13 @@
 package main
 
 import (
-	"strings"
 	"fmt"
+	"os"
+	"strings"
+	"bufio"
 
 	"github.com/davecheney/profile"
 )
-
-type CandidateMap struct {
-	cyphertext *Word
-	plaintextCandidates []*Word
-}
 
 func main() {
 	defer profile.Start(profile.CPUProfile).Stop()
@@ -21,38 +18,24 @@ func main() {
 		return
 	}
 
-	cryptogram := strings.Split("TJRBA AKFRXO KX EWKXOA R WAIAIYAWAS FJKF K WRXS RL K FAWWRYBA FJRXO FE FKLFA", " ")
+	file, err := os.Open("cryptoquips.txt")
+	if err != nil {
+		panic("unable to open cryptoquips file")
+	}
+	defer file.Close()
 
-	cryptogramWords := make([]*Word, len(cryptogram))
-	for i, cyphertext := range cryptogram {
-		cryptogramWords[i] = NewWord(cyphertext)
+	phrases := make([]string, 0)
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		phrases = append(phrases, strings.ToUpper(scanner.Text()))
 	}
 
-	candidates := make([]CandidateMap, len(cryptogramWords))
-	for i, word := range cryptogramWords {
-		candidates[i] = CandidateMap{ word, dict.QueryBySignature(word) }
-	}
+	for _, phrase := range phrases {
+		fmt.Println("\n\n\n--------------------------------------------------------------------------------")
+		fmt.Println(phrase)
+		fmt.Println("--------------------------------------------------------------------------------")
 
-	solve(candidates)
-}
-
-func solve(candidates []CandidateMap) {
-	code := NewCode()
-
-	recursiveSolve(candidates, code)
-}
-
-func recursiveSolve(candidates []CandidateMap, code *Code) {
-	if len(candidates) == 0 {
-		fmt.Println(code.decryptionMap)
-		return
-	}
-
-	for _, candidate := range candidates[0].plaintextCandidates {
-		if keys, ok := code.TryUpdateWithDecryptedWord((*candidates[0].cyphertext).CompressedText, (*candidate).CompressedText); ok {
-			recursiveSolve(candidates[1:], code)
-
-			code.RemoveLastNKeys(keys)
-		}
+		Solve(dict, phrase)
 	}
 }
